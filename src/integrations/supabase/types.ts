@@ -295,7 +295,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      seed_family_data: { Args: never; Returns: undefined }
+      seed_family_data: { Args: { _uid: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
