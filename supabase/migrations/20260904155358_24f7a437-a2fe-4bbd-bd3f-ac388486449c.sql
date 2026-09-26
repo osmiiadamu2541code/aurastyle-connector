@@ -1,0 +1,1 @@
+ALTER TABLE public.wardrobe_items ADD COLUMN IF NOT EXISTS image_url text NOT NULL DEFAULT '';
