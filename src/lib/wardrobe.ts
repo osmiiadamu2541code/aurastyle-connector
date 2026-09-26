@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Lang, ProfileId } from "./i18n";
+import { requireUid } from "./session";
 
 export type WardrobeItem = {
   id: string;
@@ -60,7 +61,7 @@ export const PHOTO_BUCKET = "wardrobe-photos";
 
 /** A photo only belongs to an item when it lives inside that item's own profile folder. */
 function ownsPhoto(item: WardrobeItem): boolean {
-  return !!item.image_url && item.image_url.startsWith(`${item.profile}/`);
+  return !!item.image_url && item.image_url.includes(`/${item.profile}/`);
 }
 
 async function withPhotoUrls(items: WardrobeItem[]): Promise<WardrobeItem[]> {
@@ -83,7 +84,7 @@ export async function fetchWardrobe(profile: ProfileId): Promise<WardrobeItem[]>
 
 export async function uploadWardrobePhoto(profile: ProfileId, file: File): Promise<string> {
   const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const path = `${profile}/${crypto.randomUUID()}.${ext}`;
+  const path = `${await requireUid()}/${profile}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from(PHOTO_BUCKET)
     .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });

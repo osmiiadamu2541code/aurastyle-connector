@@ -85,7 +85,7 @@ export async function fetchMeasurements(profile: ProfileId): Promise<Measurement
 export async function saveMeasurements(profile: ProfileId, draft: MeasurementsDraft): Promise<Measurements> {
   const { data, error } = await supabase
     .from("profile_measurements")
-    .upsert({ profile, ...draft }, { onConflict: "profile" })
+    .upsert({ profile, ...draft }, { onConflict: "user_id,profile" })
     .select()
     .single();
   if (error) throw error;

@@ -14,12 +14,170 @@ export type Database = {
   }
   public: {
     Tables: {
+      aura_guidelines: {
+        Row: {
+          created_at: string
+          guideline: string
+          id: string
+          profile: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          guideline: string
+          id?: string
+          profile: string
+          reason?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          guideline?: string
+          id?: string
+          profile?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      aura_memories: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          profile: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          id?: string
+          profile: string
+          user_id?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          profile?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      aura_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          parts: Json
+          profile: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          parts: Json
+          profile: string
+          role: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          parts?: Json
+          profile?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      family_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          notes: string
+          profile: string
+          suggestions: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_type?: string
+          id?: string
+          notes?: string
+          profile: string
+          suggestions?: Json | null
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          notes?: string
+          profile?: string
+          suggestions?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      generated_images: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          label: string
+          path: string
+          profile: string
+          user_id: string
+          view: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          label?: string
+          path: string
+          profile: string
+          user_id?: string
+          view?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          path?: string
+          profile?: string
+          user_id?: string
+          view?: string
+        }
+        Relationships: []
+      }
       profile_measurements: {
         Row: {
           avatar_url: string
           chest_cm: number | null
           comfort_needs: string
           created_at: string
+          face_shape: string
+          hair_type: string
           height_cm: number | null
           hips_cm: number | null
           id: string
@@ -29,7 +187,9 @@ export type Database = {
           preferred_fit: string
           profile: string
           shoulder_cm: number | null
+          target_weight_kg: number | null
           updated_at: string
+          user_id: string | null
           waist_cm: number | null
           weight_kg: number | null
         }
@@ -38,6 +198,8 @@ export type Database = {
           chest_cm?: number | null
           comfort_needs?: string
           created_at?: string
+          face_shape?: string
+          hair_type?: string
           height_cm?: number | null
           hips_cm?: number | null
           id?: string
@@ -47,7 +209,9 @@ export type Database = {
           preferred_fit?: string
           profile: string
           shoulder_cm?: number | null
+          target_weight_kg?: number | null
           updated_at?: string
+          user_id?: string | null
           waist_cm?: number | null
           weight_kg?: number | null
         }
@@ -56,6 +220,8 @@ export type Database = {
           chest_cm?: number | null
           comfort_needs?: string
           created_at?: string
+          face_shape?: string
+          hair_type?: string
           height_cm?: number | null
           hips_cm?: number | null
           id?: string
@@ -65,7 +231,9 @@ export type Database = {
           preferred_fit?: string
           profile?: string
           shoulder_cm?: number | null
+          target_weight_kg?: number | null
           updated_at?: string
+          user_id?: string | null
           waist_cm?: number | null
           weight_kg?: number | null
         }
@@ -86,6 +254,7 @@ export type Database = {
           occasion: string
           profile: string
           season: string
+          user_id: string | null
         }
         Insert: {
           color?: string
@@ -101,6 +270,7 @@ export type Database = {
           occasion?: string
           profile: string
           season?: string
+          user_id?: string | null
         }
         Update: {
           color?: string
@@ -116,6 +286,7 @@ export type Database = {
           occasion?: string
           profile?: string
           season?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -124,7 +295,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      seed_family_data: { Args: { _uid: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
