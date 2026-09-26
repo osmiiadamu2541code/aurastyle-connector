@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AurafitRouteImport } from './routes/aurafit'
 import { Route as MeasurementsRouteImport } from './routes/measurements'
 import { Route as WardrobeRouteImport } from './routes/wardrobe'
+import { Route as ApiAuraChatRouteImport } from './routes/api/aura-chat'
+import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +36,32 @@ const WardrobeRoute = WardrobeRouteImport.update({
   path: '/wardrobe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuraChatRoute = ApiAuraChatRouteImport.update({
+  id: '/api/aura-chat',
+  path: '/api/aura-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
+  id: '/api/generate-image',
+  path: '/api/generate-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/aurafit': typeof AurafitRoute
   '/measurements': typeof MeasurementsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/api/aura-chat': typeof ApiAuraChatRoute
+  '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/aurafit': typeof AurafitRoute
   '/measurements': typeof MeasurementsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/api/aura-chat': typeof ApiAuraChatRoute
+  '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +69,34 @@ export interface FileRoutesById {
   '/aurafit': typeof AurafitRoute
   '/measurements': typeof MeasurementsRoute
   '/wardrobe': typeof WardrobeRoute
+  '/api/aura-chat': typeof ApiAuraChatRoute
+  '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/aurafit' | '/measurements' | '/wardrobe'
+  fullPaths:
+    | '/'
+    | '/aurafit'
+    | '/measurements'
+    | '/wardrobe'
+    | '/api/aura-chat'
+    | '/api/generate-image'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/aurafit' | '/measurements' | '/wardrobe'
-  id: '__root__' | '/' | '/aurafit' | '/measurements' | '/wardrobe'
+  to:
+    | '/'
+    | '/aurafit'
+    | '/measurements'
+    | '/wardrobe'
+    | '/api/aura-chat'
+    | '/api/generate-image'
+  id:
+    | '__root__'
+    | '/'
+    | '/aurafit'
+    | '/measurements'
+    | '/wardrobe'
+    | '/api/aura-chat'
+    | '/api/generate-image'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +104,8 @@ export interface RootRouteChildren {
   AurafitRoute: typeof AurafitRoute
   MeasurementsRoute: typeof MeasurementsRoute
   WardrobeRoute: typeof WardrobeRoute
+  ApiAuraChatRoute: typeof ApiAuraChatRoute
+  ApiGenerateImageRoute: typeof ApiGenerateImageRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WardrobeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/aura-chat': {
+      id: '/api/aura-chat'
+      path: '/api/aura-chat'
+      fullPath: '/api/aura-chat'
+      preLoaderRoute: typeof ApiAuraChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generate-image': {
+      id: '/api/generate-image'
+      path: '/api/generate-image'
+      fullPath: '/api/generate-image'
+      preLoaderRoute: typeof ApiGenerateImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +160,8 @@ const rootRouteChildren: RootRouteChildren = {
   AurafitRoute: AurafitRoute,
   MeasurementsRoute: MeasurementsRoute,
   WardrobeRoute: WardrobeRoute,
+  ApiAuraChatRoute: ApiAuraChatRoute,
+  ApiGenerateImageRoute: ApiGenerateImageRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
