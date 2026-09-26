@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileId } from "./i18n";
+import { requireUid } from "./session";
 
 export const AVATAR_BUCKET = "profile-avatars";
 
@@ -20,7 +21,7 @@ export async function fetchAvatar(profile: ProfileId): Promise<ProfileAvatar | n
   const path = (data as { avatar_url?: string } | null)?.avatar_url ?? "";
   if (!path) return null;
   // Only ever resolve a photo that lives inside this profile's own folder.
-  if (!path.startsWith(`${profile}/`)) return null;
+  if (!path.includes(`/${profile}/`)) return null;
   const { data: signed } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 7);
   return { profile, path, url: signed?.signedUrl ?? null };
 }
@@ -29,7 +30,7 @@ export async function fetchAllAvatars(): Promise<Record<string, string>> {
   const { data, error } = await supabase.from("profile_measurements").select("profile, avatar_url");
   if (error) throw error;
   const rows = ((data ?? []) as { profile: string; avatar_url: string | null }[]).filter(
-    (r) => r.avatar_url && r.avatar_url.startsWith(`${r.profile}/`),
+    (r) => r.avatar_url && r.avatar_url.includes(`/${r.profile}/`),
   );
   if (rows.length === 0) return {};
   const { data: signed } = await supabase.storage
@@ -46,7 +47,7 @@ export async function fetchAllAvatars(): Promise<Record<string, string>> {
 
 export async function uploadAvatar(profile: ProfileId, file: File): Promise<string> {
   const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const path = `${profile}/${crypto.randomUUID()}.${ext}`;
+  const path = `${await requireUid()}/${profile}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from(AVATAR_BUCKET)
     .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false });
@@ -55,7 +56,7 @@ export async function uploadAvatar(profile: ProfileId, file: File): Promise<stri
   const previous = await currentAvatarPath(profile);
   const { error: dbError } = await supabase
     .from("profile_measurements")
-    .upsert({ profile, avatar_url: path }, { onConflict: "profile" });
+    .upsert({ profile, avatar_url: path }, { onConflict: "user_id,profile" });
   if (dbError) throw dbError;
   if (previous && previous !== path) await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
   return path;
@@ -65,7 +66,7 @@ export async function removeAvatar(profile: ProfileId): Promise<void> {
   const previous = await currentAvatarPath(profile);
   const { error } = await supabase
     .from("profile_measurements")
-    .upsert({ profile, avatar_url: "" }, { onConflict: "profile" });
+    .upsert({ profile, avatar_url: "" }, { onConflict: "user_id,profile" });
   if (error) throw error;
   if (previous) await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
 }
@@ -77,5 +78,5 @@ async function currentAvatarPath(profile: ProfileId): Promise<string | null> {
     .eq("profile", profile)
     .maybeSingle();
   const path = (data as { avatar_url?: string } | null)?.avatar_url ?? "";
-  return path && path.startsWith(`${profile}/`) ? path : null;
+  return path && path.includes(`/${profile}/`) ? path : null;
 }
