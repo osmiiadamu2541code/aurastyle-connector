@@ -14,11 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      profile_measurements: {
+        Row: {
+          chest_cm: number | null
+          comfort_needs: string
+          created_at: string
+          height_cm: number | null
+          hips_cm: number | null
+          id: string
+          inseam_cm: number | null
+          mobility_notes: string
+          posture_notes: string
+          preferred_fit: string
+          profile: string
+          shoulder_cm: number | null
+          updated_at: string
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          chest_cm?: number | null
+          comfort_needs?: string
+          created_at?: string
+          height_cm?: number | null
+          hips_cm?: number | null
+          id?: string
+          inseam_cm?: number | null
+          mobility_notes?: string
+          posture_notes?: string
+          preferred_fit?: string
+          profile: string
+          shoulder_cm?: number | null
+          updated_at?: string
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          chest_cm?: number | null
+          comfort_needs?: string
+          created_at?: string
+          height_cm?: number | null
+          hips_cm?: number | null
+          id?: string
+          inseam_cm?: number | null
+          mobility_notes?: string
+          posture_notes?: string
+          preferred_fit?: string
+          profile?: string
+          shoulder_cm?: number | null
+          updated_at?: string
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
       wardrobe_items: {
         Row: {
           color: string
           created_at: string
           fabric_care: string
+          fit_note: string
           icon: string
           id: string
           name: string
@@ -32,6 +87,7 @@ export type Database = {
           color?: string
           created_at?: string
           fabric_care?: string
+          fit_note?: string
           icon?: string
           id?: string
           name: string
@@ -45,6 +101,7 @@ export type Database = {
           color?: string
           created_at?: string
           fabric_care?: string
+          fit_note?: string
           icon?: string
           id?: string
           name?: string
