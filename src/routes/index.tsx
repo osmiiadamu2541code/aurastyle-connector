@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { OutfitVisualizer } from "@/components/OutfitVisualizer";
 import { useApp } from "@/lib/app-context";
+import { daysUntil, fetchEvents } from "./events";
 import { fetchAvatar } from "@/lib/avatars";
 import { fetchWardrobe } from "@/lib/wardrobe";
 import { CONDITION_LABEL, getTodayWeather, OUTFIT } from "@/lib/content";
@@ -77,8 +78,19 @@ function Home() {
     };
   });
 
+  const { data: events = [] } = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
+  const soon = events.filter((e) => { const d = daysUntil(e.event_date); return d >= 0 && d <= 14; });
   return (
     <div className="space-y-4 px-4 py-4">
+      {soon.length > 0 && (
+        <Link to="/events" className="block rounded-2xl border border-primary/40 bg-primary/10 p-3 text-xs">
+          ⏰ <b>{soon[0].title}</b> is in {daysUntil(soon[0].event_date)} day(s) — tap for outfit & shopping ideas
+        </Link>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <Link to="/tryon" className="rounded-2xl border border-border bg-card p-3 text-xs font-semibold shadow-warm">🔄 360° Try-On</Link>
+        <Link to="/events" className="rounded-2xl border border-border bg-card p-3 text-xs font-semibold shadow-warm">🎉 Event Planner</Link>
+      </div>
       <div>
         <p className="font-display text-2xl leading-snug font-semibold text-foreground">
           {t(greetingKey())} 🤍
