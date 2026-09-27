@@ -63,6 +63,7 @@ export function WeightGoal() {
   const [live, setLive] = useState<{ url: string; final: boolean } | null>(null);
 
   useEffect(() => {
+    const s0 = 0; void s0;
     const s = Number(extra?.weight_kg) || 80;
     const g = Number(extra?.target_weight_kg) || Math.max(45, s - 20);
     setStart(s);
@@ -77,7 +78,7 @@ export function WeightGoal() {
     acc += p.share * lose;
     return lost <= acc + 0.001;
   });
-  const phase = PHASES[phaseIdx < 0 ? 2 : phaseIdx];
+  const phase = PHASES[phaseIdx < 0 ? 2 : phaseIdx]!;
   const weeks = Math.ceil(lose / 0.6);
 
   async function saveGoal() {

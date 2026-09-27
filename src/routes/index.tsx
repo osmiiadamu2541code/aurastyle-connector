@@ -84,7 +84,7 @@ function Home() {
     <div className="space-y-4 px-4 py-4">
       {soon.length > 0 && (
         <Link to="/events" className="block rounded-2xl border border-primary/40 bg-primary/10 p-3 text-xs">
-          ⏰ <b>{soon[0].title}</b> is in {daysUntil(soon[0].event_date)} day(s) — tap for outfit & shopping ideas
+          ⏰ <b>{soon[0]!.title}</b> is in {daysUntil(soon[0]!.event_date)} day(s) — tap for outfit & shopping ideas
         </Link>
       )}
       <div className="grid grid-cols-2 gap-2">

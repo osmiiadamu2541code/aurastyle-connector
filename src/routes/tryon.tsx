@@ -49,7 +49,7 @@ function TryOn() {
 
   async function generate() {
     const chosen = items.filter((i) => picked.includes(i.id));
-    if (chosen.length === 0) return toast.error("Pick at least one piece");
+    if (chosen.length === 0) { toast.error("Pick at least one piece"); return; }
     setBusy(true);
     setLive({});
     const label = chosen.map((c) => c.name).join(" + ");
@@ -117,9 +117,9 @@ function TryOn() {
 
       {sets.length > 0 && <h2 className="pt-2 font-display text-lg font-semibold">Saved looks</h2>}
       {sets.map((set) => (
-        <article key={set[0].id} className="rounded-3xl border border-border bg-card p-3 shadow-warm">
+        <article key={set[0]!.id} className="rounded-3xl border border-border bg-card p-3 shadow-warm">
           <div className="flex justify-between gap-2">
-            <p className="text-xs font-semibold">{set[0].label}</p>
+            <p className="text-xs font-semibold">{set[0]!.label}</p>
             <button onClick={async () => { await deleteImages(set); qc.invalidateQueries({ queryKey: ["images", profile, "tryon"] }); }} className="text-xs text-muted-foreground">Delete</button>
           </div>
           <div className="mt-2 flex snap-x gap-2 overflow-x-auto">
