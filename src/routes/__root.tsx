@@ -11,6 +11,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 
 import { AppHeader } from "@/components/AppHeader";
+import { AuthGate } from "@/components/AuthGate";
 import { BottomNav } from "@/components/BottomNav";
 import { AppProvider } from "@/lib/app-context";
 import { translate, type Lang } from "@/lib/i18n";
@@ -143,12 +144,14 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <div className="mx-auto flex min-h-screen max-w-2xl flex-col bg-background">
-          <AppHeader />
-          <main className="flex-1 pb-24">
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-          </main>
-          <BottomNav />
+          <AuthGate>
+            <AppHeader />
+            <main className="flex-1 pb-24">
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+            </main>
+            <BottomNav />
+          </AuthGate>
         </div>
         <Toaster position="top-center" richColors />
       </AppProvider>

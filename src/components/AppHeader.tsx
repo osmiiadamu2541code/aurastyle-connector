@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
+import { supabase } from "@/integrations/supabase/client";
 import { fetchAllAvatars } from "@/lib/avatars";
 import { useApp } from "@/lib/app-context";
 import { LANGS, PROFILE_NAMES, type Lang } from "@/lib/i18n";
@@ -57,6 +58,12 @@ export function AppHeader() {
             >
               📏 {t("measurements")}
             </Link>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="shrink-0 rounded-full px-2 py-1 text-[11px] font-medium text-muted-foreground"
+            >
+              Sign out
+            </button>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {PROFILE_ORDER.map((p) => (
