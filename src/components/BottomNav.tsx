@@ -9,6 +9,8 @@ export function BottomNav() {
     { to: "/", icon: "🏡", label: t("navHome") },
     { to: "/wardrobe", icon: "🧺", label: t("navWardrobe") },
     { to: "/aurafit", icon: "🧘", label: t("navFit") },
+    { to: "/studio", icon: "💇", label: "Studio" },
+    { to: "/aura", icon: "💬", label: "Aura" },
   ] as const;
 
   return (

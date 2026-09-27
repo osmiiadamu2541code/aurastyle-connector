@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { WeightGoal } from "@/components/WeightGoal";
 import { useApp } from "@/lib/app-context";
 import { POSTURE, WORKOUTS } from "@/lib/content";
 import { fetchMeasurements, localizedMeasurementNotes } from "@/lib/measurements";
@@ -61,6 +62,8 @@ function AuraFit() {
           </div>
         )}
       </section>
+
+      <WeightGoal />
 
       <article className="rounded-3xl border border-border bg-card p-5 shadow-warm">
         <div className="flex min-w-0 items-start gap-3">

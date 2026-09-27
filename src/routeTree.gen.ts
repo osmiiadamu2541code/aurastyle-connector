@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuraRouteImport } from './routes/aura'
 import { Route as AurafitRouteImport } from './routes/aurafit'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as MeasurementsRouteImport } from './routes/measurements'
 import { Route as StudioRouteImport } from './routes/studio'
+import { Route as TryonRouteImport } from './routes/tryon'
 import { Route as WardrobeRouteImport } from './routes/wardrobe'
 import { Route as ApiAuraChatRouteImport } from './routes/api/aura-chat'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-image'
@@ -21,6 +23,11 @@ import { Route as ApiGenerateImageRouteImport } from './routes/api/generate-imag
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuraRoute = AuraRouteImport.update({
+  id: '/aura',
+  path: '/aura',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AurafitRoute = AurafitRouteImport.update({
@@ -43,6 +50,11 @@ const StudioRoute = StudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TryonRoute = TryonRouteImport.update({
+  id: '/tryon',
+  path: '/tryon',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WardrobeRoute = WardrobeRouteImport.update({
   id: '/wardrobe',
   path: '/wardrobe',
@@ -61,20 +73,24 @@ const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/aura': typeof AuraRoute
   '/aurafit': typeof AurafitRoute
   '/events': typeof EventsRoute
   '/measurements': typeof MeasurementsRoute
   '/studio': typeof StudioRoute
+  '/tryon': typeof TryonRoute
   '/wardrobe': typeof WardrobeRoute
   '/api/aura-chat': typeof ApiAuraChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/aura': typeof AuraRoute
   '/aurafit': typeof AurafitRoute
   '/events': typeof EventsRoute
   '/measurements': typeof MeasurementsRoute
   '/studio': typeof StudioRoute
+  '/tryon': typeof TryonRoute
   '/wardrobe': typeof WardrobeRoute
   '/api/aura-chat': typeof ApiAuraChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -82,10 +98,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/aura': typeof AuraRoute
   '/aurafit': typeof AurafitRoute
   '/events': typeof EventsRoute
   '/measurements': typeof MeasurementsRoute
   '/studio': typeof StudioRoute
+  '/tryon': typeof TryonRoute
   '/wardrobe': typeof WardrobeRoute
   '/api/aura-chat': typeof ApiAuraChatRoute
   '/api/generate-image': typeof ApiGenerateImageRoute
@@ -94,30 +112,36 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/aura'
     | '/aurafit'
     | '/events'
     | '/measurements'
     | '/studio'
+    | '/tryon'
     | '/wardrobe'
     | '/api/aura-chat'
     | '/api/generate-image'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/aura'
     | '/aurafit'
     | '/events'
     | '/measurements'
     | '/studio'
+    | '/tryon'
     | '/wardrobe'
     | '/api/aura-chat'
     | '/api/generate-image'
   id:
     | '__root__'
     | '/'
+    | '/aura'
     | '/aurafit'
     | '/events'
     | '/measurements'
     | '/studio'
+    | '/tryon'
     | '/wardrobe'
     | '/api/aura-chat'
     | '/api/generate-image'
@@ -125,10 +149,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuraRoute: typeof AuraRoute
   AurafitRoute: typeof AurafitRoute
   EventsRoute: typeof EventsRoute
   MeasurementsRoute: typeof MeasurementsRoute
   StudioRoute: typeof StudioRoute
+  TryonRoute: typeof TryonRoute
   WardrobeRoute: typeof WardrobeRoute
   ApiAuraChatRoute: typeof ApiAuraChatRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
@@ -141,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aura': {
+      id: '/aura'
+      path: '/aura'
+      fullPath: '/aura'
+      preLoaderRoute: typeof AuraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aurafit': {
@@ -171,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tryon': {
+      id: '/tryon'
+      path: '/tryon'
+      fullPath: '/tryon'
+      preLoaderRoute: typeof TryonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wardrobe': {
       id: '/wardrobe'
       path: '/wardrobe'
@@ -197,10 +237,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuraRoute: AuraRoute,
   AurafitRoute: AurafitRoute,
   EventsRoute: EventsRoute,
   MeasurementsRoute: MeasurementsRoute,
   StudioRoute: StudioRoute,
+  TryonRoute: TryonRoute,
   WardrobeRoute: WardrobeRoute,
   ApiAuraChatRoute: ApiAuraChatRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
