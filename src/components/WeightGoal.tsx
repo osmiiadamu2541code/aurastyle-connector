@@ -63,7 +63,7 @@ export function WeightGoal() {
   const [live, setLive] = useState<{ url: string; final: boolean } | null>(null);
 
   useEffect(() => {
-    const s0 = 0; void s0;
+
     const s = Number(extra?.weight_kg) || 80;
     const g = Number(extra?.target_weight_kg) || Math.max(45, s - 20);
     setStart(s);
@@ -83,7 +83,7 @@ export function WeightGoal() {
 
   async function saveGoal() {
     const { error } = await supabase.from("profile_measurements").upsert({ profile, weight_kg: start, target_weight_kg: goal }, { onConflict: "user_id,profile" });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Goal saved");
     qc.invalidateQueries({ queryKey: ["measurements", profile] });
   }
