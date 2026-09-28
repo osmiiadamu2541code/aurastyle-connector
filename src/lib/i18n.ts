@@ -1,11 +1,45 @@
+/**
+ * Language registry. To add a language (e.g. Arabic, French, Swahili):
+ *   1. Add its code to `Lang` and an entry to `LANGS` below (set dir: "rtl" for Arabic, Urdu…).
+ *   2. Drop `src/lib/tx-<code>.json` next to tx-am.json — it's discovered and bundled automatically.
+ *   3. Optionally add a key dictionary to `dicts`; missing keys and phrases fall back to English.
+ *   4. TypeScript will then list every `Record<Lang, …>` content table that still needs the new language.
+ */
 export type Lang = "en" | "am" | "om";
 export type ProfileId = "usman" | "wife" | "mother" | "kids";
 
-export const LANGS: { id: Lang; label: string }[] = [
-  { id: "en", label: "EN" },
-  { id: "am", label: "አማርኛ" },
-  { id: "om", label: "Afaan Oromoo" },
+export type LangInfo = {
+  id: Lang;
+  /** Short chip label, in the language itself. */
+  label: string;
+  /** Full native name, used for accessibility and AI prompts. */
+  nativeName: string;
+  /** English name, passed to the AI so it replies in this language. */
+  englishName: string;
+  dir: "ltr" | "rtl";
+  /** BCP 47 locale for dates and numbers. */
+  locale: string;
+};
+
+/**
+ * To add a language: append it here, add its UI strings to `DICT` below,
+ * and drop a `tx-<id>.json` phrase file next to `tx.ts`. It is picked up automatically.
+ */
+export const LANGS: LangInfo[] = [
+  { id: "en", label: "EN", nativeName: "English", englishName: "English", dir: "ltr", locale: "en-US" },
+  { id: "am", label: "አማርኛ", nativeName: "አማርኛ", englishName: "Amharic", dir: "ltr", locale: "am-ET" },
+  { id: "om", label: "Oromoo", nativeName: "Afaan Oromoo", englishName: "Afaan Oromoo (Oromo)", dir: "ltr", locale: "om-ET" },
 ];
+
+export const LANG_IDS = LANGS.map((l) => l.id);
+
+export function isLang(v: unknown): v is Lang {
+  return typeof v === "string" && (LANG_IDS as string[]).includes(v);
+}
+
+export function langInfo(lang: Lang): LangInfo {
+  return LANGS.find((l) => l.id === lang) ?? LANGS[0]!;
+}
 
 export const PROFILE_NAMES: Record<Lang, Record<ProfileId, string>> = {
   en: { usman: "Usman", wife: "Wife", mother: "Mother", kids: "Kids" },
@@ -331,7 +365,7 @@ const am: Dict = {
   fitNoteLabel: "የአቀማመጥ ወይም የልኬት ማስታወሻ",
   fitNotePlaceholder: "ለምሳሌ፦ ትንሽ ነው፣ አንድ ልኬት ጨምር · ትከሻው ሰፊ ነው",
   suggestedFitFor: "የሚመከረው ለ",
-  noMeasurements: "እስካሁን ልኬት አልተቀመጠም — ጨምረው፣ ሁሉንም ምክር ላንተ አስማምቼ እሰጣለሁ።",
+  noMeasurements: "እስካሁን ልኬት አልተቀመጠም — ጨምረው፣ ሁሉንም ምክር ላንተ አ���ማምቼ እሰጣለሁ።",
 };
 
 const om: Dict = {
@@ -494,8 +528,20 @@ const om: Dict = {
   noMeasurements: "Ammatti safartuun hin olkaa'amne — dabali, gorsa hunda siif mijeessa.",
 };
 
-const dicts: Record<Lang, Dict> = { en, am, om };
+const dicts: Partial<Record<Lang, Dict>> & { en: Dict } = { en, am, om };
 
 export function translate(lang: Lang, key: string): string {
-  return dicts[lang][key] ?? dicts.en[key] ?? key;
+  return dicts[lang]?.[key] ?? dicts.en[key] ?? key;
+}
+
+const tCache = new Map<Lang, (key: string) => string>();
+
+/** Stable translator per language, so memoised components don't re-render needlessly. */
+export function tFor(lang: Lang): (key: string) => string {
+  let fn = tCache.get(lang);
+  if (!fn) {
+    fn = (key: string) => translate(lang, key);
+    tCache.set(lang, fn);
+  }
+  return fn;
 }

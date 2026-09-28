@@ -1,6 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { translate, type Lang, type ProfileId, PROFILE_NAMES } from "./i18n";
+import { isLang, langInfo, PROFILE_NAMES, tFor, type Lang, type ProfileId } from "./i18n";
 import { txFor, type Tx } from "./tx";
 
 type AppState = {
@@ -9,36 +9,40 @@ type AppState = {
   profile: ProfileId;
   setProfile: (p: ProfileId) => void;
   t: (key: string) => string;
-  /** Translate an English phrase (newer screens). Supports {var} placeholders. */
+  /** Translate an English phrase. Supports {var} placeholders. */
   tx: Tx;
   profileName: (p?: ProfileId) => string;
 };
 
 const AppContext = createContext<AppState | null>(null);
 
+const PROFILES: ProfileId[] = ["usman", "wife", "mother", "kids"];
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
   const [profile, setProfileState] = useState<ProfileId>("usman");
 
   useEffect(() => {
-    const savedLang = localStorage.getItem("aura.lang") as Lang | null;
+    const savedLang = localStorage.getItem("aura.lang");
     const savedProfile = localStorage.getItem("aura.profile") as ProfileId | null;
-    if (savedLang) setLangState(savedLang);
-    if (savedProfile) setProfileState(savedProfile);
+    if (isLang(savedLang)) setLangState(savedLang);
+    if (savedProfile && PROFILES.includes(savedProfile)) setProfileState(savedProfile);
   }, []);
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    document.documentElement.dir = langInfo(lang).dir;
   }, [lang]);
 
+  // Translations are already in memory; a transition keeps taps responsive while every screen re-renders.
   const setLang = useCallback((l: Lang) => {
-    setLangState(l);
     localStorage.setItem("aura.lang", l);
+    startTransition(() => setLangState(l));
   }, []);
 
   const setProfile = useCallback((p: ProfileId) => {
-    setProfileState(p);
     localStorage.setItem("aura.profile", p);
+    startTransition(() => setProfileState(p));
   }, []);
 
   const value = useMemo<AppState>(
@@ -47,7 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLang,
       profile,
       setProfile,
-      t: (key: string) => translate(lang, key),
+      t: tFor(lang),
       tx: txFor(lang),
       profileName: (p?: ProfileId) => PROFILE_NAMES[lang][p ?? profile],
     }),

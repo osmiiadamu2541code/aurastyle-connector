@@ -2,7 +2,7 @@ import { useChat } from "@ai-sdk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { toast } from "sonner";
 
 import auraMark from "@/assets/aura-mark.png";
@@ -13,7 +13,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "@/components/ai-elements/tool";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
-import type { ProfileId } from "@/lib/i18n";
+import type { Lang, ProfileId } from "@/lib/i18n";
 import { authHeaders } from "@/lib/session";
 
 export const Route = createFileRoute("/aura")({
@@ -42,7 +42,7 @@ async function loadHistory(profile: ProfileId): Promise<UIMessage[]> {
 }
 
 function AuraPage() {
-  const { profile, profileName } = useApp();
+  const { profile, profileName, tx, lang } = useApp();
   const { data, isLoading } = useQuery({ queryKey: ["aura-history", profile], queryFn: () => loadHistory(profile), staleTime: Infinity });
   return (
     <div className="flex h-[calc(100dvh-12rem)] flex-col px-4 pt-3">
@@ -50,20 +50,21 @@ function AuraPage() {
         <img src={auraMark} alt="Aura" width={44} height={44} className="h-11 w-11 rounded-2xl bg-card shadow-warm" />
         <div>
           <h1 className="font-display text-xl font-semibold">Aura</h1>
-          <p className="text-xs text-muted-foreground">Talking with {profileName()} · remembers everything you share</p>
+          <p className="text-xs text-muted-foreground">{tx("Talking with {who} · remembers everything you share", { who: profileName() })}</p>
         </div>
       </div>
       <MemoryPanel profile={profile} />
       {isLoading || !data ? (
-        <div className="flex-1 pt-6"><Shimmer>Opening your chat…</Shimmer></div>
+        <div className="flex-1 pt-6"><Shimmer>{tx("Opening your chat…")}</Shimmer></div>
       ) : (
-        <ChatWindow key={profile} profile={profile} initial={data} />
+        <ChatWindow key={profile} profile={profile} lang={lang} initial={data} />
       )}
     </div>
   );
 }
 
-function MemoryPanel({ profile }: { profile: ProfileId }) {
+const MemoryPanel = memo(function MemoryPanel({ profile }: { profile: ProfileId }) {
+  const { tx } = useApp();
   const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["aura-memory", profile],
@@ -77,32 +78,33 @@ function MemoryPanel({ profile }: { profile: ProfileId }) {
   });
   const forget = async (table: "aura_memories" | "aura_guidelines", id: string) => {
     await supabase.from(table).delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["aura-memory", profile] });
+    void qc.invalidateQueries({ queryKey: ["aura-memory", profile] });
   };
   const count = (data?.memories.length ?? 0) + (data?.guidelines.length ?? 0);
   return (
     <details className="mt-2 rounded-2xl border border-border bg-card px-3 py-2 text-xs">
-      <summary className="cursor-pointer font-medium">🧠 What Aura remembers ({count})</summary>
+      <summary className="cursor-pointer font-medium">🧠 {tx("What Aura remembers ({n})", { n: count })}</summary>
       <div className="mt-2 max-h-40 space-y-1 overflow-y-auto">
         {data?.memories.map((m) => (
-          <p key={m.id} className="flex justify-between gap-2"><span>• <b>{m.category}:</b> {m.content}</span><button onClick={() => forget("aura_memories", m.id)} className="text-muted-foreground">✕</button></p>
+          <p key={m.id} className="flex justify-between gap-2"><span>• <b>{m.category}:</b> {m.content}</span><button onClick={() => forget("aura_memories", m.id)} className="text-muted-foreground" aria-label={tx("Forget this")}>✕</button></p>
         ))}
         {data?.guidelines.map((g) => (
-          <p key={g.id} className="flex justify-between gap-2"><span>🌱 {g.guideline}</span><button onClick={() => forget("aura_guidelines", g.id)} className="text-muted-foreground">✕</button></p>
+          <p key={g.id} className="flex justify-between gap-2"><span>🌱 {g.guideline}</span><button onClick={() => forget("aura_guidelines", g.id)} className="text-muted-foreground" aria-label={tx("Forget this")}>✕</button></p>
         ))}
-        {count === 0 && <p className="text-muted-foreground">Nothing yet — tell Aura what you love, and she'll remember.</p>}
+        {count === 0 && <p className="text-muted-foreground">{tx("Nothing yet — tell Aura what you love, and she'll remember.")}</p>}
       </div>
     </details>
   );
-}
+});
 
 const STARTERS = ["What should I wear to a wedding this weekend?", "I prefer earthy colours and loose fits", "Help me plan a week of outfits"];
 
-function ChatWindow({ profile, initial }: { profile: ProfileId; initial: UIMessage[] }) {
+function ChatWindow({ profile, lang, initial }: { profile: ProfileId; lang: Lang; initial: UIMessage[] }) {
+  const { tx } = useApp();
   const qc = useQueryClient();
   const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/aura-chat", headers: authHeaders, body: { profile } }),
-    [profile],
+    () => new DefaultChatTransport({ api: "/api/aura-chat", headers: authHeaders, body: { profile, lang } }),
+    [profile, lang],
   );
   const { messages, sendMessage, status, stop } = useChat({
     id: `aura-${profile}`,
@@ -110,7 +112,7 @@ function ChatWindow({ profile, initial }: { profile: ProfileId; initial: UIMessa
     transport,
     onError: (e) => {
       const msg = e.message || "";
-      toast.error(msg.includes("402") ? "AI credits have run out." : msg.includes("429") ? "Aura is busy — please try again in a moment." : "Aura couldn't reply. Please try again.");
+      toast.error(msg.includes("402") ? tx("AI credits have run out.") : msg.includes("429") ? tx("Aura is busy — please try again in a moment.") : tx("Aura couldn't reply. Please try again."));
     },
     onFinish: () => qc.invalidateQueries({ queryKey: ["aura-memory", profile] }),
   });
@@ -122,41 +124,20 @@ function ChatWindow({ profile, initial }: { profile: ProfileId; initial: UIMessa
         <ConversationContent>
           {messages.length === 0 && (
             <div className="space-y-2 pt-4">
-              <p className="text-sm text-muted-foreground">Hello my dear, what can I help you with today?</p>
+              <p className="text-sm text-muted-foreground">{tx("Hello my dear, what can I help you with today?")}</p>
               {STARTERS.map((s) => (
-                <button key={s} onClick={() => sendMessage({ text: s })} className="block w-full rounded-2xl border border-border bg-card px-3 py-2 text-left text-xs">{s}</button>
+                <button key={s} onClick={() => sendMessage({ text: tx(s) })} className="block w-full rounded-2xl border border-border bg-card px-3 py-2 text-left text-xs">{tx(s)}</button>
               ))}
             </div>
           )}
-          {messages.map((m) => (
-            <Message key={m.id} from={m.role}>
-              <MessageContent className={m.role === "user" ? "bg-primary text-primary-foreground" : ""}>
-                {m.parts.map((p, i) => {
-                  if (p.type === "text") return <MessageResponse key={i}>{p.text}</MessageResponse>;
-                  if (p.type.startsWith("tool-")) {
-                    const tp = p as Extract<UIMessage["parts"][number], { type: `tool-${string}` }> & { state: never; input?: unknown; output?: unknown; errorText?: string };
-                    return (
-                      <Tool key={i} defaultOpen={false}>
-                        <ToolHeader type={tp.type as never} state={tp.state} />
-                        <ToolContent>
-                          <ToolInput input={tp.input} />
-                          <ToolOutput output={tp.output as never} errorText={tp.errorText} />
-                        </ToolContent>
-                      </Tool>
-                    );
-                  }
-                  return null;
-                })}
-              </MessageContent>
-            </Message>
-          ))}
-          {status === "submitted" && <Shimmer>Aura is thinking…</Shimmer>}
+          {messages.map((m) => <ChatMessage key={m.id} message={m} />)}
+          {status === "submitted" && <Shimmer>{tx("Aura is thinking…")}</Shimmer>}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
       <div className="pb-2">
         <PromptInput onSubmit={({ text }) => { if (text.trim() && !busy) sendMessage({ text }); }}>
-          <PromptInputTextarea autoFocus placeholder="Tell Aura anything…" />
+          <PromptInputTextarea autoFocus placeholder={tx("Tell Aura anything…")} />
           <PromptInputFooter className="justify-end">
             <PromptInputSubmit status={status} onStop={stop} />
           </PromptInputFooter>
@@ -165,3 +146,28 @@ function ChatWindow({ profile, initial }: { profile: ProfileId; initial: UIMessa
     </div>
   );
 }
+
+const ChatMessage = memo(function ChatMessage({ message: m }: { message: UIMessage }) {
+  return (
+    <Message from={m.role}>
+      <MessageContent className={m.role === "user" ? "bg-primary text-primary-foreground" : ""}>
+        {m.parts.map((p, i) => {
+          if (p.type === "text") return <MessageResponse key={i}>{p.text}</MessageResponse>;
+          if (p.type.startsWith("tool-")) {
+            const tp = p as Extract<UIMessage["parts"][number], { type: `tool-${string}` }> & { state: never; input?: unknown; output?: unknown; errorText?: string };
+            return (
+              <Tool key={i} defaultOpen={false}>
+                <ToolHeader type={tp.type as never} state={tp.state} />
+                <ToolContent>
+                  <ToolInput input={tp.input} />
+                  <ToolOutput output={tp.output as never} errorText={tp.errorText} />
+                </ToolContent>
+              </Tool>
+            );
+          }
+          return null;
+        })}
+      </MessageContent>
+    </Message>
+  );
+});

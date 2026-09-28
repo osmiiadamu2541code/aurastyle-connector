@@ -22,9 +22,11 @@ export type EventSuggestions = {
 
 export const suggestEventOutfits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ eventId: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({ eventId: z.string().uuid(), lang: z.string().max(10).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { createGateway, createRunIdFetch, CHAT_MODEL, responsesOptions } = await import("./ai-gateway.server");
+    const { isLang, langInfo } = await import("./i18n");
+    const language = langInfo(isLang(data.lang) ? data.lang : "en").englishName;
     const { supabase } = context;
     const { data: event, error } = await supabase.from("family_events").select("*").eq("id", data.eventId).single();
     if (error || !event) throw new Error("Event not found");
@@ -40,6 +42,7 @@ export const suggestEventOutfits = createServerFn({ method: "POST" })
 Their wardrobe: ${(items ?? []).map((i) => `${i.name} (${i.color}, ${i.occasion})`).join("; ") || "empty"}.
 Size & fit: ${fit ? `${fit.height_cm}cm, ${fit.weight_kg}kg, prefers ${fit.preferred_fit} fit` : "unknown"}. Known preferences: ${(mems ?? []).map((m) => m.content).join("; ") || "none"}.
 Respect modest dress (hijab for wife where appropriate) and cultural celebration norms.
+Write every text value (titles, pieces, reasons, items, budgets, prep steps) in ${language}; keep the JSON keys in English.
 Return ONLY JSON: {"outfits":[{"title":"","pieces":["use wardrobe item names where possible"],"why":""}],"shopping":[{"item":"","why":"","budget":"price range in ETB"}],"prep":["preparation step days before"]}. Give 3 outfits, 2-4 shopping ideas, 3-5 prep steps.`;
     const result = streamText({ model: gateway.responses(CHAT_MODEL), prompt, providerOptions: responsesOptions });
     const text = await result.text;

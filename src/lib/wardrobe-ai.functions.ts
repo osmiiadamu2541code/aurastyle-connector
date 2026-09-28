@@ -24,15 +24,22 @@ export const analyzeClothingPhoto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
-      .object({ image: z.string().startsWith("data:image/").max(3_000_000), profile: z.string().max(20) })
+      .object({
+        image: z.string().startsWith("data:image/").max(3_000_000),
+        profile: z.string().max(20),
+        lang: z.string().max(10).optional(),
+      })
       .parse(d),
   )
   .handler(async ({ data }): Promise<DetectedItem> => {
     const { createGateway, createRunIdFetch, CHAT_MODEL } = await import("./ai-gateway.server");
+    const { isLang, langInfo } = await import("./i18n");
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("AI is not configured");
     const gateway = createGateway(apiKey, createRunIdFetch());
+    const language = langInfo(isLang(data.lang) ? data.lang : "en").englishName;
     const prompt = `You are a wardrobe assistant for an Ethiopian family. Look at this clothing photo (for the "${data.profile}" profile) and identify the single main item.
+Write "fabric_care" and "fit_note" in ${language}. Keep the enum values exactly as listed (in English).
 Return ONLY JSON with these keys:
 {"name":"short English item name, e.g. 'Navy linen shirt'","name_am":"same name in Amharic","name_om":"same name in Afaan Oromoo","category":one of ${JSON.stringify(CATEGORIES)},"color":closest of ${JSON.stringify(TILE_COLORS)},"season":one of ["summer","winter","rainy","allseason"],"occasion":one of ["casual","work","formal","event"],"fabric_care":"1-2 short sentences of washing/ironing care based on the visible fabric","fit_note":"one short sentence on how it fits or how to wear it"}`;
     const result = streamText({

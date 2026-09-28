@@ -24,8 +24,10 @@ export const Route = createFileRoute("/api/aura-chat")({
         const apiKey = process.env["LOVABLE_API_KEY"];
         if (!apiKey) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
-        const body = (await request.json()) as { messages?: UIMessage[]; profile?: string };
+        const body = (await request.json()) as { messages?: UIMessage[]; profile?: string; lang?: string };
         const profile = body.profile ?? "";
+        const { isLang, langInfo } = await import("@/lib/i18n");
+        const language = langInfo(isLang(body.lang) ? body.lang : "en").englishName;
         const messages = Array.isArray(body.messages) ? body.messages : [];
         if (!(PROFILES as readonly string[]).includes(profile) || messages.length === 0) {
           return new Response("Invalid request", { status: 400 });
@@ -52,7 +54,7 @@ export const Route = createFileRoute("/api/aura-chat")({
         const events = (eventRes.data ?? []).map((e) => `${e.event_date}: ${e.title} (${e.event_type}, for ${e.profile})`).join("; ");
 
         const system = `You are Aura, the warm, motherly personal stylist and wellbeing companion of an Ethiopian family (Usman, his wife, his mother, and the kids). You are talking with ${NAMES[profile]}.
-Speak with gentle care, like a loving aunt who is also an expert stylist, groomer and fitness coach. Keep answers practical, specific and short (a few short paragraphs or a list). Respect modest dress, hijab styling for those who wear it, and each person's faith and culture. Reply in the language the user writes in (English, Amharic or Afaan Oromoo).
+Speak with gentle care, like a loving aunt who is also an expert stylist, groomer and fitness coach. Keep answers practical, specific and short (a few short paragraphs or a list). Respect modest dress, hijab styling for those who wear it, and each person's faith and culture. The app is set to ${language}: reply in ${language} by default, but if the user clearly writes in another language, reply in that language instead.
 
 PERMANENT MEMORY about ${NAMES[profile]}:
 ${memories}

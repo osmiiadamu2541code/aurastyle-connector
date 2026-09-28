@@ -22,6 +22,8 @@ export type WardrobeItem = {
 export type NewItem = {
   profile: ProfileId;
   name: string;
+  name_am?: string | null;
+  name_om?: string | null;
   icon: string;
   color: string;
   season: string;
@@ -52,8 +54,8 @@ export const TILE_COLORS: Record<string, string> = {
 export const COLOR_CHOICES = Object.keys(TILE_COLORS);
 
 export function itemName(item: WardrobeItem, lang: Lang) {
-  if (lang === "am") return item.name_am ?? item.name;
-  if (lang === "om") return item.name_om ?? item.name;
+  if (lang === "am") return item.name_am || item.name;
+  if (lang === "om") return item.name_om || item.name;
   return item.name;
 }
 
@@ -92,16 +94,41 @@ export async function uploadWardrobePhoto(profile: ProfileId, file: File): Promi
   return path;
 }
 
+/** Uploads photos (resized, 3 at a time) and inserts every item in one database call. */
+export async function addWardrobeItems(items: NewItem[]): Promise<WardrobeItem[]> {
+  if (items.length === 0) return [];
+  const { toUploadFile } = await import("./image-resize");
+  const paths: string[] = new Array(items.length).fill("");
+  const uploaded: string[] = [];
+  let next = 0;
+  const worker = async () => {
+    for (let i = next++; i < items.length; i = next++) {
+      const item = items[i]!;
+      if (!item.photoFile) { paths[i] = item.image_url ?? ""; continue; }
+      paths[i] = await uploadWardrobePhoto(item.profile, await toUploadFile(item.photoFile));
+      uploaded.push(paths[i]!);
+    }
+  };
+  try {
+    await Promise.all([worker(), worker(), worker()]);
+    const rows = items.map(({ photoFile: _f, ...rest }, i) => ({
+      ...rest,
+      name_am: rest.name_am || null,
+      name_om: rest.name_om || null,
+      image_url: paths[i]!,
+    }));
+    const { data, error } = await supabase.from("wardrobe_items").insert(rows).select();
+    if (error) throw error;
+    return (data ?? []) as WardrobeItem[];
+  } catch (err) {
+    if (uploaded.length) await supabase.storage.from(PHOTO_BUCKET).remove(uploaded);
+    throw err;
+  }
+}
+
 export async function addWardrobeItem(item: NewItem): Promise<WardrobeItem> {
-  const { photoFile, ...rest } = item;
-  const image_url = photoFile ? await uploadWardrobePhoto(item.profile, photoFile) : (item.image_url ?? "");
-  const { data, error } = await supabase
-    .from("wardrobe_items")
-    .insert({ ...rest, image_url })
-    .select()
-    .single();
-  if (error) throw error;
-  return data as WardrobeItem;
+  const [saved] = await addWardrobeItems([item]);
+  return saved!;
 }
 
 export async function deleteWardrobeItem(id: string, imagePath?: string): Promise<void> {

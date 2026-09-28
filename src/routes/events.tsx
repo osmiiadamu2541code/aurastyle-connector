@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/app-context";
 import { suggestEventOutfits, type EventSuggestions } from "@/lib/family.functions";
-import { PROFILE_NAMES, type ProfileId } from "@/lib/i18n";
+import { PROFILE_NAMES, langInfo, type ProfileId } from "@/lib/i18n";
 import { PROFILE_ORDER } from "@/lib/profile-icons";
 
 export const Route = createFileRoute("/events")({
@@ -35,13 +35,13 @@ export type FamilyEvent = {
 };
 
 const TYPES = [
-  ["wedding", "💍 Wedding"],
-  ["eid", "🌙 Eid"],
-  ["holiday", "✝️ Holiday / Timket"],
-  ["birthday", "🎂 Birthday"],
-  ["graduation", "🎓 Graduation"],
-  ["celebration", "🎉 Celebration"],
-  ["work", "💼 Work event"],
+  ["wedding", "💍", "Wedding"],
+  ["eid", "🌙", "Eid"],
+  ["holiday", "✝️", "Holiday / Timket"],
+  ["birthday", "🎂", "Birthday"],
+  ["graduation", "🎓", "Graduation"],
+  ["celebration", "🎉", "Celebration"],
+  ["work", "💼", "Work event"],
 ] as const;
 
 export async function fetchEvents(): Promise<FamilyEvent[]> {
@@ -58,7 +58,7 @@ export function daysUntil(date: string) {
 }
 
 function Events() {
-  const { profile } = useApp();
+  const { profile, tx, lang } = useApp();
   const qc = useQueryClient();
   const { data: events = [], isLoading } = useQuery({ queryKey: ["events"], queryFn: fetchEvents });
   const [form, setForm] = useState({ title: "", event_type: "wedding", event_date: "", notes: "", profile: profile as string });
@@ -70,26 +70,31 @@ function Events() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Event saved");
+      toast.success(tx("Event saved"));
       setOpen(false);
       setForm({ ...form, title: "", notes: "", event_date: "" });
-      qc.invalidateQueries({ queryKey: ["events"] });
+      void qc.invalidateQueries({ queryKey: ["events"] });
     },
     onError: (e) => toast.error(e.message),
   });
 
-  const upcoming = events.filter((e) => daysUntil(e.event_date) >= 0);
-  const past = events.filter((e) => daysUntil(e.event_date) < 0);
+  const { upcoming, past } = useMemo(
+    () => ({
+      upcoming: events.filter((e) => daysUntil(e.event_date) >= 0),
+      past: events.filter((e) => daysUntil(e.event_date) < 0),
+    }),
+    [events],
+  );
 
   return (
     <div className="space-y-4 px-4 py-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl font-semibold">Event Planner</h1>
-          <p className="text-sm text-muted-foreground">Every celebration, dressed for in advance</p>
+          <h1 className="font-display text-2xl font-semibold">{tx("Event Planner")}</h1>
+          <p className="text-sm text-muted-foreground">{tx("Every celebration, dressed for in advance")}</p>
         </div>
-        <button onClick={() => setOpen(!open)} className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm">
-          {open ? "Close" : "+ Add"}
+        <button onClick={() => setOpen(!open)} aria-expanded={open} className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-warm">
+          {open ? tx("Close") : `+ ${tx("Add")}`}
         </button>
       </div>
 
@@ -101,33 +106,34 @@ function Events() {
           }}
           className="space-y-3 rounded-3xl border border-border bg-card p-4 shadow-warm"
         >
-          <input required placeholder="e.g. Cousin Hanan's wedding" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-input bg-background px-4 py-2.5 text-sm" />
+          <label className="sr-only" htmlFor="ev-title">{tx("Event name")}</label>
+          <input id="ev-title" required placeholder={tx("e.g. Cousin Hanan's wedding")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-2xl border border-input bg-background px-4 py-2.5 text-sm" />
           <div className="grid grid-cols-2 gap-2">
-            <select value={form.event_type} onChange={(e) => setForm({ ...form, event_type: e.target.value })} className="rounded-2xl border border-input bg-background px-3 py-2.5 text-sm">
-              {TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            <select aria-label={tx("Event type")} value={form.event_type} onChange={(e) => setForm({ ...form, event_type: e.target.value })} className="rounded-2xl border border-input bg-background px-3 py-2.5 text-sm">
+              {TYPES.map(([v, icon, l]) => <option key={v} value={v}>{icon} {tx(l)}</option>)}
             </select>
-            <input required type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} className="rounded-2xl border border-input bg-background px-3 py-2.5 text-sm" />
+            <input aria-label={tx("Date")} required type="date" value={form.event_date} onChange={(e) => setForm({ ...form, event_date: e.target.value })} className="rounded-2xl border border-input bg-background px-3 py-2.5 text-sm" />
           </div>
-          <select value={form.profile} onChange={(e) => setForm({ ...form, profile: e.target.value })} className="w-full rounded-2xl border border-input bg-background px-3 py-2.5 text-sm">
-            {PROFILE_ORDER.map((p) => <option key={p} value={p}>For {PROFILE_NAMES.en[p as ProfileId]}</option>)}
+          <select aria-label={tx("Who is it for?")} value={form.profile} onChange={(e) => setForm({ ...form, profile: e.target.value })} className="w-full rounded-2xl border border-input bg-background px-3 py-2.5 text-sm">
+            {PROFILE_ORDER.map((p) => <option key={p} value={p}>{tx("For {who}", { who: PROFILE_NAMES[lang][p as ProfileId] })}</option>)}
           </select>
-          <textarea placeholder="Dress code, colours, venue, budget…" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-2xl border border-input bg-background px-4 py-2.5 text-sm" rows={2} />
+          <textarea aria-label={tx("Notes")} placeholder={tx("Dress code, colours, venue, budget…")} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="w-full rounded-2xl border border-input bg-background px-4 py-2.5 text-sm" rows={2} />
           <button disabled={add.isPending} className="w-full rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60">
-            {add.isPending ? "Saving…" : "Save event"}
+            {add.isPending ? tx("Saving…") : tx("Save event")}
           </button>
         </form>
       )}
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {isLoading && <p className="text-sm text-muted-foreground">{tx("Loading…")}</p>}
       {!isLoading && upcoming.length === 0 && (
         <p className="rounded-3xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          No celebrations planned yet. Add a wedding, Eid or birthday and I'll help everyone get ready.
+          {tx("No celebrations planned yet. Add a wedding, Eid or birthday and I'll help everyone get ready.")}
         </p>
       )}
       {upcoming.map((e) => <EventCard key={e.id} event={e} />)}
       {past.length > 0 && (
         <details className="text-sm">
-          <summary className="cursor-pointer text-muted-foreground">Past events ({past.length})</summary>
+          <summary className="cursor-pointer text-muted-foreground">{tx("Past events ({n})", { n: past.length })}</summary>
           <div className="mt-3 space-y-3">{past.map((e) => <EventCard key={e.id} event={e} />)}</div>
         </details>
       )}
@@ -135,12 +141,13 @@ function Events() {
   );
 }
 
-function EventCard({ event }: { event: FamilyEvent }) {
+const EventCard = memo(function EventCard({ event }: { event: FamilyEvent }) {
+  const { tx, lang } = useApp();
   const qc = useQueryClient();
   const suggest = useServerFn(suggestEventOutfits);
   const days = daysUntil(event.event_date);
   const ideas = useMutation({
-    mutationFn: () => suggest({ data: { eventId: event.id } }),
+    mutationFn: () => suggest({ data: { eventId: event.id, lang } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["events"] }),
     onError: (e) => toast.error(e.message),
   });
@@ -153,24 +160,32 @@ function EventCard({ event }: { event: FamilyEvent }) {
   });
   const s = event.suggestions;
   const soon = days >= 0 && days <= 14;
+  const type = TYPES.find((t) => t[0] === event.event_type);
+  const dateLabel = useMemo(() => {
+    const d = new Date(event.event_date + "T00:00:00");
+    try {
+      return d.toLocaleDateString(langInfo(lang).locale, { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+    } catch {
+      return d.toDateString();
+    }
+  }, [event.event_date, lang]);
+  const when = days === 0 ? tx("Today!") : days === 1 ? tx("in 1 day") : days > 0 ? tx("in {n} days", { n: days }) : tx("passed");
 
   return (
     <article className={`rounded-3xl border bg-card p-4 shadow-warm ${soon ? "border-primary/50" : "border-border"}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">
-            {TYPES.find((t) => t[0] === event.event_type)?.[1] ?? event.event_type} · {PROFILE_NAMES.en[event.profile as ProfileId] ?? event.profile}
+            {type ? `${type[1]} ${tx(type[2])}` : event.event_type} · {PROFILE_NAMES[lang][event.profile as ProfileId] ?? event.profile}
           </p>
           <h3 className="mt-0.5 font-display text-lg font-semibold">{event.title}</h3>
-          <p className="text-xs text-muted-foreground">
-            {new Date(event.event_date + "T00:00:00").toDateString()} · {days === 0 ? "Today!" : days > 0 ? `in ${days} day${days === 1 ? "" : "s"}` : "passed"}
-          </p>
+          <p className="text-xs text-muted-foreground">{dateLabel} · {when}</p>
         </div>
-        <button onClick={() => remove.mutate()} className="text-xs text-muted-foreground" aria-label="Delete event">✕</button>
+        <button onClick={() => remove.mutate()} className="text-xs text-muted-foreground" aria-label={tx("Delete event")}>✕</button>
       </div>
       {event.notes && <p className="mt-2 text-xs">{event.notes}</p>}
 
-      {soon && !s && <p className="mt-3 rounded-2xl bg-primary/10 p-3 text-xs">⏰ It's coming up soon — let me plan the outfits and shopping now.</p>}
+      {soon && !s && <p className="mt-3 rounded-2xl bg-primary/10 p-3 text-xs">⏰ {tx("It's coming up soon — let me plan the outfits and shopping now.")}</p>}
 
       {s ? (
         <div className="mt-3 space-y-3">
@@ -185,7 +200,7 @@ function EventCard({ event }: { event: FamilyEvent }) {
           </div>
           {s.shopping.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Shopping list</p>
+              <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">{tx("Shopping list")}</p>
               <ul className="mt-1 space-y-1">
                 {s.shopping.map((i) => (
                   <li key={i.item} className="text-xs">🛍️ <b>{i.item}</b> — {i.why} <span className="text-muted-foreground">({i.budget})</span></li>
@@ -195,19 +210,19 @@ function EventCard({ event }: { event: FamilyEvent }) {
           )}
           {s.prep.length > 0 && (
             <div>
-              <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">Get ready</p>
+              <p className="text-[11px] font-semibold tracking-widest text-primary uppercase">{tx("Get ready")}</p>
               <ul className="mt-1 space-y-1">{s.prep.map((p) => <li key={p} className="text-xs">✔️ {p}</li>)}</ul>
             </div>
           )}
           <button onClick={() => ideas.mutate()} disabled={ideas.isPending} className="text-xs font-medium text-primary">
-            {ideas.isPending ? "Thinking…" : "↻ Fresh ideas"}
+            {ideas.isPending ? tx("Thinking…") : `↻ ${tx("Fresh ideas")}`}
           </button>
         </div>
       ) : (
         <button onClick={() => ideas.mutate()} disabled={ideas.isPending} className="mt-3 w-full rounded-full bg-primary py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60">
-          {ideas.isPending ? "Aura is planning…" : "✨ Plan outfits & shopping"}
+          {ideas.isPending ? tx("Aura is planning…") : `✨ ${tx("Plan outfits & shopping")}`}
         </button>
       )}
     </article>
   );
-}
+});
