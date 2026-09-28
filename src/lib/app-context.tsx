@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { translate, type Lang, type ProfileId, PROFILE_NAMES } from "./i18n";
+import { txFor, type Tx } from "./tx";
 
 type AppState = {
   lang: Lang;
@@ -8,6 +9,8 @@ type AppState = {
   profile: ProfileId;
   setProfile: (p: ProfileId) => void;
   t: (key: string) => string;
+  /** Translate an English phrase (newer screens). Supports {var} placeholders. */
+  tx: Tx;
   profileName: (p?: ProfileId) => string;
 };
 
@@ -23,6 +26,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (savedLang) setLangState(savedLang);
     if (savedProfile) setProfileState(savedProfile);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
@@ -41,6 +48,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       profile,
       setProfile,
       t: (key: string) => translate(lang, key),
+      tx: txFor(lang),
       profileName: (p?: ProfileId) => PROFILE_NAMES[lang][p ?? profile],
     }),
     [lang, profile, setLang, setProfile],
